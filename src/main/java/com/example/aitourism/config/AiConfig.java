@@ -8,9 +8,12 @@ import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.tool.ToolProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Value;
+
+import java.util.Optional;
 
 @Configuration
 public class AiConfig {
@@ -32,8 +35,9 @@ public class AiConfig {
 
     @Bean
     public AssistantService assistantService(ChatMemoryProvider chatMemoryProvider,
-                                             POISearchTool poiSearchTool) {
-        return AiServices.builder(AssistantService.class)
+                                             POISearchTool poiSearchTool,
+                                             Optional<ToolProvider> mcpToolProviderOptional) {
+        var builder = AiServices.builder(AssistantService.class)
                 .chatModel(OpenAiChatModel.builder()
                         .apiKey(apiKey)
                         .baseUrl(baseUrl)
@@ -45,7 +49,10 @@ public class AiConfig {
                         .modelName("deepseek-chat")
                         .build())
                 .chatMemoryProvider(chatMemoryProvider)
-                .tools(poiSearchTool) 
-                .build();
+                .tools(poiSearchTool);
+
+        mcpToolProviderOptional.ifPresent(builder::toolProvider);
+
+        return builder.build();
     }
 }

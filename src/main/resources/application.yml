@@ -44,3 +44,8 @@ langchain4j:
 # ====== ⬇️【在这里配置你申请的高德API KEY】⬇️ ======
 amap:
   api-key: ad8cc5d37d1beee96ab3ee0c75a6d816
+
+mcp:
+  enabled: false
+  sse-url: ""
+  timeout-seconds: 20
