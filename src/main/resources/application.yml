@@ -1,184 +1,34 @@
 server:
-  # 端口
-  port: 8290
+  port: 8080
 
-# 连接数据库
 spring:
+  application:
+    name: ai-tourism
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/aitourism?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8
+    url: jdbc:mysql://localhost:3306/tourist?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
-  jackson:
-    property-naming-strategy: SNAKE_CASE
-  output:
-    ansi:
-      enabled: ALWAYS
-  task:
-    scheduling:
-      pool:
-        size: 1
-  # data:
-  redis:
-    host: localhost
-    port: 6379
-    password: 
-    database: 0
-    ttl: 1800
-    lettuce:
-      pool:
-        max-active: 8
-        max-idle: 8
-        min-idle: 0
-        max-wait: -1ms
-
-# MCP服务配置
-mcp:
-  heartbeat-interval-seconds: 300       # 5分钟
-  ping-timeout-seconds: 5
-  # MCP工具结果裁剪配置
-  result-truncation:
-    enabled: true                       # 是否启用结果裁剪功能
-    max-length: 2000                    # 最大结果长度（字符数），考虑免费API的4096 token限制
-    smart-truncation: true              # 是否启用智能裁剪（在自然断点处截断）
-    preserve-structure: true            # 是否保持JSON等结构化数据的完整性
-    # 裁剪策略配置
-    strategy: "smart"                   # 裁剪策略：smart(智能), simple(简单), summary(摘要)
-    # 不同工具的不同裁剪长度限制（格式：工具名:长度,工具名:长度）
-    tool-specific-limits: "baidu_search:1500,fetchJuejinArticle:1000"
-  clients:
-    - name: "amap"
-      sse-url: "https://mcp.amap.com/sse?key=xxx"
-      log-requests: true
-      log-responses: true
-      timeout-seconds: 600
-    # - name: "local"
-    #   sse-url: "http://localhost:3000/sse"
-    #   log-requests: true
-    #   log-responses: true
-    #   timeout-seconds: 600
-
-openweather:
-  api-key: "xxx"
-
-# OpenAI配置（主模型）
-openai:
-  api-key: "xxx"
-#  base-url: "https://api.chatanywhere.tech/v1"  # 国内节点
-  base-url: "https://api.chatanywhere.org"      # 国外节点
-  model-name: "gpt-4o-mini"
-  max-output-tokens: 800
-
-# OpenAI配置（小模型）
-openai-small:
-  api-key: "xxx"
-  base-url: "http://localhost:11434/v1"      # 本地 Ollama 模型
-  model-name: "qwen2.5:1.5b"
-  max-output-tokens: 800
-
-# HTTP客户端配置
-http:
-  client:
-    connect-timeout: 30000
-    read-timeout: 120000
-    max-connections: 100
-    keep-alive-duration: 300000
-
-# 应用配置
-app:
-  mcp:
-    health-check-interval: 300000  # 5分钟
-    retry-attempts: 3
-    retry-delay: 5000
-
-
-# MyBatis 写数据库
-mybatis:
-  mapper-locations: classpath:/mapper/*.xml
-  type-aliases-package: com.example.aitourism.entity
-  configuration:
-    map-underscore-to-camel-case: true
-
-
-# 日志
-logging:
-  file:
-    name: app.log
-    # 或者使用 path
-    # path: ./logs
-  level:
-    com.example.aitourism: INFO
-    org.springframework.web: INFO
-  logback:
-    rollingpolicy:
-      max-file-size: 10MB
-      max-history: 30
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%highlight(%-5level)] [%thread] [%X{traceId}] %-5level %logger{36}:%line - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%highlight(%-5level)] [%thread] [%X{traceId}] %-5level %logger{36}:%line - %msg%n"
-
-
-# Sa-Token & JWT 配置
-sa-token:
-  token-name: Authorization
-  is-read-cookie: false
-  is-read-body: false
-  is-read-header: true
-  token-prefix: Bearer
-  timeout: 300   # 10分钟过期，然后前端会refresh刷新
-  active-timeout: -1
-  is-share: false
-  is-log: true
-  jwt-secret-key: "please-change-me-very-strong"
-
-
-# 会话隔离记忆管理配置
-ai:
-  memory:
+  data:
     redis:
-      host: localhost
+      host: 127.0.0.1
       port: 6379
-      password: 
-      ttl: 1800  # 1小时过期，1800
-      key-prefix: "ai:memory:"
 
-# 会话隔离相关配置
-session:
-  isolation:
-    enabled: true
-    max-sessions-per-user: 50
-    session-timeout: 3600  # 会话超时时间（秒）
-    memory-cache-size: 2000  # 记忆缓存大小
+langchain4j:
+  open-ai:
+    chat-model:
+      api-key: sk-552e4dda91774b7cb0fc73b4ffbf97d8
+      base-url: https://api.deepseek.com
+      model-name: deepseek-chat
+      max-tokens: 2000
+      temperature: 0.7
+    streaming-chat-model:
+      api-key: sk-552e4dda91774b7cb0fc73b4ffbf97d8
+      base-url: https://api.deepseek.com
+      model-name: deepseek-chat
+      max-tokens: 2000
+      temperature: 0.7      
 
-# A/B测试配置 - 针对单人测试优化
-ab-test:
-  tool-cache:
-    enabled: true
-    target-hit-rate: 0.8
-    record-no-cache-baseline: true
-    no-cache-test-ratio: 0.3  # 30%的请求不使用缓存，快速收集对比数据
-  service-cache:
-    enabled: true
-    record-no-cache-baseline: true
-    no-cache-test-ratio: 0.2  # 20%的请求不使用缓存，快速收集对比数据
-  truncation:
-    enabled: true
-    record-no-truncation-baseline: true
-    no-truncation-test-ratio: 0.2  # 20%的请求不使用裁剪，快速收集对比数据
-
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,prometheus,metrics,threaddump,env,logfile
-  endpoint:
-    health:
-      show-details: always
-    prometheus:
-      enabled: true
-  prometheus:
-    metrics:
-      export:
-        step: 10s
-        registry-type: classic
+# ====== ⬇️【在这里配置你申请的高德API KEY】⬇️ ======
+amap:
+  api-key: ad8cc5d37d1beee96ab3ee0c75a6d816

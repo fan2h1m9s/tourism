@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 智能旅游助手 (MVP Demo)</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        #chat-container { width: 100%; max-width: 600px; height: 90vh; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
+        #header { background-color: #007bff; color: white; padding: 15px 20px; text-align: center; font-size: 1.2em; font-weight: bold; }
+        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .message { max-width: 80%; padding: 12px 16px; border-radius: 15px; line-height: 1.5; font-size: 0.95em; word-wrap: break-word; }
+        .user-message { align-self: flex-end; background-color: #007bff; color: white; border-bottom-right-radius: 4px; }
+        .ai-message { align-self: flex-start; background-color: #f1f3f4; color: #333; border-bottom-left-radius: 4px; }
+        #input-container { padding: 15px 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; background-color: #fff; }
+        #user-input { flex: 1; padding: 12px 15px; border: 1px solid #ccc; border-radius: 25px; outline: none; font-size: 1em; transition: border-color 0.3s; }
+        #user-input:focus { border-color: #007bff; }
+        #send-btn { background-color: #007bff; color: white; border: none; padding: 0 20px; border-radius: 25px; cursor: pointer; font-size: 1em; font-weight: bold; transition: background-color 0.3s; }
+        #send-btn:hover { background-color: #0056b3; }
+        #send-btn:disabled { background-color: #a0c4ff; cursor: not-allowed; }
+        
+        /* 避免换行符被忽略，保持AI输出的格式 */
+        .ai-message { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+    <div id="header">🏔️ AI 智能旅游助手 (简历Demo) 🏕️</div>
+    <div id="messages">
+        <div class="message ai-message">你好！我是你的智能旅游规划助手，你有什么旅行计划或想知道哪些城市的景点推荐呢？</div>
+    </div>
+    <div id="input-container">
+        <input type="text" id="user-input" placeholder="输入你要去哪里或者你的需求... (支持多行程)" onkeypress="handleKeyPress(event)">
+        <button id="send-btn" onclick="sendMessage()">发 送</button>
+    </div>
+</div>
+
+<script>
+    // 在本地生成一个固定的会话ID保持上下文
+    const sessionId = "session-" + Math.random().toString(36).substr(2, 9);
+    
+    function handleKeyPress(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    }
+
+    async function sendMessage() {
+        const inputField = document.getElementById('user-input');
+        const text = inputField.value.trim();
+        if (!text) return;
+        
+        addMessage(text, 'user-message');
+        inputField.value = '';
+        
+        const btn = document.getElementById('send-btn');
+        btn.disabled = true;
+        btn.innerText = '思考中...';
+
+        // 占位符准备接收打字机内容
+        const aiMessageDiv = document.createElement('div');
+        aiMessageDiv.className = 'message ai-message';
+        document.getElementById('messages').appendChild(aiMessageDiv);
+        scrollToBottom();
+
+        try {
+            // 调用后端的流式接口
+            const response = await fetch('/chat/stream', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId: sessionId, message: text })
+            });
+
+            if (!response.ok) {
+                throw new Error("网络响应异常");
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let aiText = "";
+
+            // 读取流式数据（打字机效果）
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                // 解析返回的数据块 SSE中的 "data:"
+                const chunk = decoder.decode(value, { stream: true });
+                // 使用正则表达式匹配 SSE 的 data 块
+                const dataLines = chunk.split('\n');
+                for(let line of dataLines) {
+                    if (line.startsWith('data:')) {
+                        const content = line.substring(5); // 去掉 "data:" 
+                        aiText += content;
+                        aiMessageDiv.innerText = aiText;
+                        scrollToBottom();
+                    }
+                }
+            }
+        } catch (error) {
+            aiMessageDiv.innerText = "抱歉，系统或网络出现异常，请稍后再试。[" + error.message + "]";
+        } finally {
+            btn.disabled = false;
+            btn.innerText = '发 送';
+            scrollToBottom();
+        }
+    }
+
+    function addMessage(text, className) {
+        const div = document.createElement('div');
+        div.className = 'message ' + className;
+        div.innerText = text;
+        document.getElementById('messages').appendChild(div);
+        scrollToBottom();
+    }
+
+    function scrollToBottom() {
+        const msgs = document.getElementById('messages');
+        msgs.scrollTop = msgs.scrollHeight;
+    }
+</script>
+</body>
+</html>
