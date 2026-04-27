@@ -39,6 +39,7 @@
 <script>
     // 在本地生成一个固定的会话ID保持上下文
     const sessionId = "session-" + Math.random().toString(36).substr(2, 9);
+    const userId = "demo-user";
     
     function handleKeyPress(e) {
         if (e.key === 'Enter') {
@@ -69,7 +70,7 @@
             const response = await fetch('/chat/stream', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sessionId: sessionId, message: text })
+                body: JSON.stringify({ sessionId: sessionId, userId: userId, message: text })
             });
 
             if (!response.ok) {

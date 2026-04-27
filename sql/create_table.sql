@@ -1,154 +1,145 @@
-# 数据库初始化
+-- AI Tourism MVP Demo schema
+-- MySQL 8+
 
--- 创建库
-create database if not exists aitourism;
+CREATE DATABASE IF NOT EXISTS ai_tourism_demo DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+USE ai_tourism_demo;
 
--- 切换库
-use aitourism;
+CREATE TABLE IF NOT EXISTS t_user (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id VARCHAR(64) NOT NULL COMMENT '业务用户ID',
+    phone VARCHAR(20) NULL,
+    password_hash VARCHAR(200) NULL,
+    nickname VARCHAR(64) NULL,
+    status TINYINT NOT NULL DEFAULT 1 COMMENT '1=正常,0=禁用',
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modify_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT uk_user_userid UNIQUE (user_id),
+    CONSTRAINT uk_user_phone UNIQUE (phone)
+) COMMENT='用户表';
 
+CREATE TABLE IF NOT EXISTS t_role (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    role_code VARCHAR(64) NOT NULL,
+    role_name VARCHAR(64) NOT NULL,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_role_code UNIQUE (role_code)
+) COMMENT='角色表';
 
--- 会话表
-create table t_ai_assistant_sessions
-(
-    id           bigint auto_increment              primary key,
-    session_id   varchar(64)                        not null comment '会话ID',
-    user_id      varchar(64)                        not null comment '用户ID',
-    user_name    varchar(64)                        not null comment '用户名',
-    created_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    modify_time  datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    title        varchar(255)                       not null comment '标题',
-    daily_routes varchar(512)                       null,
-    constraint session_id
-        unique (session_id)
-)comment 'AI 助手会话表';
+CREATE TABLE IF NOT EXISTS t_permission (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    perm_code VARCHAR(128) NOT NULL,
+    perm_name VARCHAR(128) NOT NULL,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_perm_code UNIQUE (perm_code)
+) COMMENT='权限表';
 
+CREATE TABLE IF NOT EXISTS t_user_role (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id VARCHAR(64) NOT NULL,
+    role_code VARCHAR(64) NOT NULL,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_user_role UNIQUE (user_id, role_code),
+    CONSTRAINT fk_user_role_user FOREIGN KEY (user_id) REFERENCES t_user (user_id),
+    CONSTRAINT fk_user_role_role FOREIGN KEY (role_code) REFERENCES t_role (role_code)
+) COMMENT='用户-角色关联表';
 
--- 消息表
-create table t_ai_assistant_chat_messages
-(
-    msg_id      varchar(64)                        not null comment '消息ID'          primary key,
-    session_id  varchar(64)                        not null comment '会话ID',
-    user_name   varchar(64)                        not null comment '用户名',
-    role        varchar(32)                        not null comment '角色(user/assistant)',
-    content     text                               not null comment '对话内容',
-    title       varchar(255)                       null comment '标题',
-    create_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    modify_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    constraint fk_session
-        foreign key (session_id) references t_ai_assistant_sessions (session_id)
-)comment 'AI 助手消息表';
+CREATE TABLE IF NOT EXISTS t_role_permission (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    role_code VARCHAR(64) NOT NULL,
+    perm_code VARCHAR(128) NOT NULL,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_role_perm UNIQUE (role_code, perm_code),
+    CONSTRAINT fk_rp_role FOREIGN KEY (role_code) REFERENCES t_role (role_code),
+    CONSTRAINT fk_rp_perm FOREIGN KEY (perm_code) REFERENCES t_permission (perm_code)
+) COMMENT='角色-权限关联表';
 
+CREATE TABLE IF NOT EXISTS t_refresh_token (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id VARCHAR(64) NOT NULL,
+    refresh_token VARCHAR(255) NOT NULL,
+    expire_at DATETIME NOT NULL,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_refresh_token UNIQUE (refresh_token),
+    INDEX idx_refresh_user_id (user_id),
+    CONSTRAINT fk_refresh_user FOREIGN KEY (user_id) REFERENCES t_user (user_id)
+) COMMENT='刷新令牌表';
 
--- 景点表
-create table if not exists t_poi
-(
-    id bigint auto_increment primary key,
-    poi_name varchar(255) not null comment '景点名称',
-    city_name varchar(255) not null comment '城市名称',
-    poi_description text not null comment '景点描述',
-    poi_longitude float not null comment '景点经度',
-    poi_latitude float not null comment '景点纬度',
-    poi_rankInCity int not null comment '景点在城市中的排名',
-    poi_rankInChina int not null comment '景点在全国中的排名',
-    created_time datetime default CURRENT_TIMESTAMP not null,
-    modify_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP
-) comment '景点信息表';
+CREATE TABLE IF NOT EXISTS t_ai_session (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    session_id VARCHAR(64) NOT NULL COMMENT '会话ID',
+    user_id VARCHAR(64) NOT NULL COMMENT '业务用户ID',
+    title VARCHAR(255) NOT NULL COMMENT '会话标题',
+    status TINYINT NOT NULL DEFAULT 1 COMMENT '1=有效,0=关闭',
+    last_message_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modify_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT uk_ai_session_id UNIQUE (session_id),
+    INDEX idx_ai_session_user_time (user_id, last_message_time DESC),
+    CONSTRAINT fk_ai_session_user FOREIGN KEY (user_id) REFERENCES t_user (user_id)
+) COMMENT='AI会话表';
 
--- 创建索引
-CREATE INDEX idx_city_rank ON t_poi(city_name, poi_rankInCity);
+CREATE TABLE IF NOT EXISTS t_ai_message (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    msg_id VARCHAR(64) NOT NULL COMMENT '消息ID',
+    session_id VARCHAR(64) NOT NULL COMMENT '会话ID',
+    user_id VARCHAR(64) NOT NULL COMMENT '业务用户ID',
+    role VARCHAR(32) NOT NULL COMMENT 'user/assistant/system/tool',
+    content MEDIUMTEXT NOT NULL COMMENT '消息内容',
+    token_input INT NULL,
+    token_output INT NULL,
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_ai_msg_id UNIQUE (msg_id),
+    INDEX idx_ai_msg_session_time (session_id, created_time),
+    INDEX idx_ai_msg_user_time (user_id, created_time),
+    CONSTRAINT fk_ai_msg_session FOREIGN KEY (session_id) REFERENCES t_ai_session (session_id),
+    CONSTRAINT fk_ai_msg_user FOREIGN KEY (user_id) REFERENCES t_user (user_id)
+) COMMENT='AI消息表';
 
+CREATE TABLE IF NOT EXISTS t_poi (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    poi_name VARCHAR(255) NOT NULL,
+    city_name VARCHAR(255) NOT NULL,
+    poi_description TEXT NULL,
+    poi_longitude DECIMAL(10, 6) NULL,
+    poi_latitude DECIMAL(10, 6) NULL,
+    poi_rank_in_city INT NULL,
+    poi_rank_in_china INT NULL,
+    source VARCHAR(64) NOT NULL DEFAULT 'amap',
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modify_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_poi_city_rank (city_name, poi_rank_in_city),
+    INDEX idx_poi_city_name (city_name, poi_name)
+) COMMENT='景点信息表';
 
--- 用户表
-create table if not exists t_user
-(
-    id            bigint auto_increment              primary key,
-    user_id       varchar(64)                        not null comment '业务用户ID',
-    phone         varchar(20)                        not null comment '手机号',
-    password_hash varchar(200)                       not null comment 'BCrypt 密码',
-    nickname      varchar(64)                        null,
-    avatar        varchar(255)                       null,
-    status        tinyint default 1                  not null comment '1=正常,0=禁用',
-    created_time  datetime default CURRENT_TIMESTAMP not null,
-    modify_time   datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
-    constraint uk_user_phone unique (phone),
-    constraint uk_user_userid unique (user_id)
-) comment '用户表';
+-- seed: role and permission
+INSERT INTO t_role(role_code, role_name) VALUES
+('USER', '普通用户'),
+('ROOT', '超级管理员')
+ON DUPLICATE KEY UPDATE role_name = VALUES(role_name);
 
--- 角色表
-create table if not exists t_role
-(
-    id          bigint auto_increment primary key,
-    role_code   varchar(64) not null,
-    role_name   varchar(64) not null,
-    constraint uk_role_code unique (role_code)
-) comment '角色表';
+INSERT INTO t_permission(perm_code, perm_name) VALUES
+('ai:chat', '发送聊天消息'),
+('ai:history', '查询会话历史'),
+('ai:session', '查询会话列表'),
+('user:set-root', '设置ROOT角色'),
+('user:disable', '禁用用户')
+ON DUPLICATE KEY UPDATE perm_name = VALUES(perm_name);
 
--- 用户角色关联
-create table if not exists t_user_role
-(
-    id       bigint auto_increment primary key,
-    user_id  varchar(64) not null,
-    role_code varchar(64) not null,
-    constraint fk_user_role_user foreign key (user_id) references t_user (user_id),
-    constraint fk_user_role_role foreign key (role_code) references t_role (role_code)
-) comment '用户角色关联表';
+INSERT INTO t_role_permission(role_code, perm_code) VALUES
+('USER', 'ai:chat'),
+('USER', 'ai:history'),
+('USER', 'ai:session')
+ON DUPLICATE KEY UPDATE perm_code = VALUES(perm_code);
 
--- 刷新令牌表
-create table if not exists t_refresh_token
-(
-    id                 bigint auto_increment primary key,
-    user_id            varchar(64) not null,
-    refresh_token      varchar(255) not null,
-    expire_at          datetime not null,
-    created_time       datetime default CURRENT_TIMESTAMP not null,
-    constraint uk_refresh_token unique (refresh_token),
-    index idx_user_id (user_id)
-) comment '刷新令牌表';
+INSERT INTO t_role_permission(role_code, perm_code)
+SELECT 'ROOT', p.perm_code FROM t_permission p
+ON DUPLICATE KEY UPDATE perm_code = VALUES(perm_code);
 
--- 权限表
-create table if not exists t_permission
-(
-    id           bigint auto_increment primary key,
-    perm_code    varchar(128) not null comment '权限编码，如 ai:chat:read',
-    perm_name    varchar(128) not null,
-    constraint uk_perm_code unique (perm_code)
-) comment '权限表';
+-- seed: demo user
+INSERT INTO t_user(user_id, phone, nickname, status)
+VALUES ('demo-user', '13800000000', '演示用户', 1)
+ON DUPLICATE KEY UPDATE nickname = VALUES(nickname), status = VALUES(status);
 
--- 角色-权限 关联表
-create table if not exists t_role_permission
-(
-    id         bigint auto_increment primary key,
-    role_code  varchar(64)  not null,
-    perm_code  varchar(128) not null,
-    constraint fk_rp_role  foreign key (role_code) references t_role (role_code),
-    constraint fk_rp_perm  foreign key (perm_code) references t_permission (perm_code)
-) comment '角色权限关联表';
-
-
-
--- 角色
-insert into t_role(role_code, role_name) values
-('USER','普通用户'),
-('ROOT','超级管理员')
-on duplicate key update role_name=values(role_name);
-
--- 权限
-insert into t_permission(perm_code, perm_name) values
-('ai:session','会话列表'),
-('ai:history','会话历史'),
-('ai:chat','聊天发送与流式'),
-('user:disable','禁用用户'),
-('user:set-root','设为ROOT')
-on duplicate key update perm_name=values(perm_name);
-
--- USER 角色权限（仅业务三项）
-insert into t_role_permission(role_code, perm_code) values
-('USER','ai:session'),
-('USER','ai:history'),
-('USER','ai:chat')
-on duplicate key update perm_code=values(perm_code);
-
--- ROOT 角色权限（授予全部）
-insert into t_role_permission(role_code, perm_code)
-select 'ROOT', p.perm_code from t_permission p
-on duplicate key update perm_code=values(perm_code);
+INSERT INTO t_user_role(user_id, role_code)
+VALUES ('demo-user', 'USER')
+ON DUPLICATE KEY UPDATE role_code = VALUES(role_code);
