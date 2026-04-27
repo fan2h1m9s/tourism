@@ -1,6 +1,7 @@
 package com.example.aitourism.repository;
 
 import com.example.aitourism.dto.ChatHistoryItem;
+import com.example.aitourism.dto.ChatSessionItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -62,6 +63,25 @@ public class ChatPersistenceRepository {
                         rs.getTimestamp("created_time").toLocalDateTime()
                 ),
                 sessionId,
+                limit
+        );
+    }
+
+    public List<ChatSessionItem> listSessions(String userId, int limit) {
+        return jdbcTemplate.query(
+                """
+                SELECT session_id, title, last_message_time
+                FROM t_ai_session
+                WHERE user_id = ?
+                ORDER BY last_message_time DESC
+                LIMIT ?
+                """,
+                (rs, rowNum) -> new ChatSessionItem(
+                        rs.getString("session_id"),
+                        rs.getString("title"),
+                        rs.getTimestamp("last_message_time").toLocalDateTime()
+                ),
+                userId,
                 limit
         );
     }

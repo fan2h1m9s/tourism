@@ -3,6 +3,7 @@ package com.example.aitourism.controller;
 import com.example.aitourism.dto.ChatHistoryItem;
 import com.example.aitourism.dto.ChatSendRequest;
 import com.example.aitourism.dto.ChatSendResponse;
+import com.example.aitourism.dto.ChatSessionItem;
 import com.example.aitourism.service.DemoChatService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,12 @@ public class ChatController {
     public List<ChatHistoryItem> history(@RequestParam String sessionId,
                                          @RequestParam(defaultValue = "50") int limit) {
         return demoChatService.history(sessionId, limit);
+    }
+
+    @GetMapping("/sessions")
+    public List<ChatSessionItem> sessions(@RequestParam String userId,
+                                          @RequestParam(defaultValue = "50") int limit) {
+        return demoChatService.sessions(userId, limit);
     }
 
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

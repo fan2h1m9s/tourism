@@ -4,11 +4,23 @@ server:
 spring:
   application:
     name: ai-tourism
+  devtools:
+    restart:
+      enabled: true
+      additional-paths: src/main/resources/static
+    livereload:
+      enabled: true
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/ai_tourism?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
+  web:
+    resources:
+      cache:
+        period: 0
+      chain:
+        cache: false
   data:
     redis:
       host: 127.0.0.1

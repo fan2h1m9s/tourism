@@ -4,6 +4,7 @@ import com.example.aitourism.ai.AssistantService;
 import com.example.aitourism.dto.ChatHistoryItem;
 import com.example.aitourism.dto.ChatSendRequest;
 import com.example.aitourism.dto.ChatSendResponse;
+import com.example.aitourism.dto.ChatSessionItem;
 import com.example.aitourism.repository.ChatPersistenceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,12 @@ public class DemoChatService {
     public List<ChatHistoryItem> history(String sessionId, int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 200));
         return chatPersistenceRepository.listMessages(sessionId, safeLimit);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ChatSessionItem> sessions(String userId, int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 200));
+        return chatPersistenceRepository.listSessions(userId, safeLimit);
     }
 
     private String normalizeSessionId(String sessionId) {
