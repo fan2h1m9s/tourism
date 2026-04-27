@@ -1,8 +1,8 @@
 -- AI Tourism MVP Demo schema
 -- MySQL 8+
 
-CREATE DATABASE IF NOT EXISTS ai_tourism_demo DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
-USE ai_tourism_demo;
+CREATE DATABASE IF NOT EXISTS ai_tourism DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+USE ai_tourism;
 
 CREATE TABLE IF NOT EXISTS t_user (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
