@@ -25,8 +25,8 @@ public class ToolDebugController {
     @Value("${mcp.enabled:false}")
     private boolean mcpEnabled;
 
-    @Value("${mcp.sse-url:}")
-    private String mcpSseUrl;
+    @Value("${mcp.url:}")
+    private String mcpUrl;
 
     private final Optional<POISearchTool> poiSearchToolOptional;
     private final Optional<ToolProvider> mcpToolProviderOptional;
@@ -36,7 +36,7 @@ public class ToolDebugController {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("toolMode", toolMode);
         result.put("mcpEnabled", mcpEnabled);
-        result.put("mcpSseUrlConfigured", mcpSseUrl != null && !mcpSseUrl.isBlank());
+        result.put("mcpUrlConfigured", mcpUrl != null && !mcpUrl.isBlank());
         result.put("localPoiToolBeanPresent", poiSearchToolOptional.isPresent());
         result.put("mcpToolProviderBeanPresent", mcpToolProviderOptional.isPresent());
         result.put("activeToolSources", resolveActiveToolSources());

@@ -2,8 +2,10 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-.old.md
+README.old.md
 background.md
+DEV-NOTES.md
+.claude
 
 ### STS ###
 .apt_generated

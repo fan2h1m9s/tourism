@@ -63,7 +63,7 @@ public class AiConfig {
                                 if (mcpToolProviderOptional.isPresent()) {
                                         builder.toolProvider(mcpToolProviderOptional.get());
                                 } else {
-                                        System.err.println("[WARN] ai.tool.mode=mcp 但 MCP ToolProvider 未加载，已降级为无工具模式。请检查 mcp.enabled 与 mcp.sse-url 配置。");
+                                        System.err.println("[WARN] ai.tool.mode=mcp 但 MCP ToolProvider 未加载，已降级为无工具模式。请检查 mcp.enabled 与 mcp.url 配置，以及 AMAP_API_KEY 环境变量。");
                                 }
                                 break;
                         case "hybrid":
