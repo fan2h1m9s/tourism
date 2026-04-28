@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-04-27T20:44:59",
+  "base_url": "http://127.0.0.1:8080",
+  "user_id": "demo-user",
+  "repeats": 1,
+  "case_limit": 1,
+  "quick": true,
+  "elapsed_seconds": 2.151,
+  "cases": [
+    {
+      "case_id": "multi_city_budget",
+      "prompt": "Plan a 5-day trip: first 2 days in Beijing for family travel, then 3 days in Tianjin for food and city walk, budget under 6000 RMB.",
+      "ok": false,
+      "error_count": 1,
+      "errors": [
+        "URLError: <urlopen error [WinError 10061] 由于目标计算机积极拒绝，无法连接。>"
+      ],
+      "segment_coverage": 0.0,
+      "constraint_adherence": 0.0,
+      "stability": 0.0,
+      "samples": []
+    }
+  ],
+  "long_session_memory": {
+    "ok": true,
+    "score": 0.0,
+    "skipped": true
+  },
+  "session_isolation": {
+    "ok": true,
+    "score": 0.0,
+    "skipped": true
+  },
+  "overall": {
+    "segment_coverage": 0.0,
+    "constraint_adherence": 0.0,
+    "stability": 0.0,
+    "long_session_memory": 0.0,
+    "session_isolation": 0.0
+  }
+}

@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Optional;
+import java.util.Locale;
 
 @Configuration
 public class AiConfig {
@@ -23,6 +24,9 @@ public class AiConfig {
 
     @Value("${langchain4j.open-ai.chat-model.base-url:}")
     private String baseUrl;
+
+        @Value("${ai.tool.mode:hybrid}")
+        private String toolMode;
 
     @Bean
     public ChatMemoryProvider chatMemoryProvider(CustomRedisChatMemoryStore customRedisChatMemoryStore) {
@@ -35,7 +39,7 @@ public class AiConfig {
 
     @Bean
     public AssistantService assistantService(ChatMemoryProvider chatMemoryProvider,
-                                             POISearchTool poiSearchTool,
+                                             Optional<POISearchTool> poiSearchToolOptional,
                                              Optional<ToolProvider> mcpToolProviderOptional) {
         var builder = AiServices.builder(AssistantService.class)
                 .chatModel(OpenAiChatModel.builder()
@@ -48,10 +52,26 @@ public class AiConfig {
                         .baseUrl(baseUrl)
                         .modelName("deepseek-chat")
                         .build())
-                .chatMemoryProvider(chatMemoryProvider)
-                .tools(poiSearchTool);
+                                .chatMemoryProvider(chatMemoryProvider);
 
-        mcpToolProviderOptional.ifPresent(builder::toolProvider);
+                String mode = toolMode == null ? "hybrid" : toolMode.toLowerCase(Locale.ROOT).trim();
+                switch (mode) {
+                        case "local":
+                                poiSearchToolOptional.ifPresent(builder::tools);
+                                break;
+                        case "mcp":
+                                if (mcpToolProviderOptional.isPresent()) {
+                                        builder.toolProvider(mcpToolProviderOptional.get());
+                                } else {
+                                        System.err.println("[WARN] ai.tool.mode=mcp 但 MCP ToolProvider 未加载，已降级为无工具模式。请检查 mcp.enabled 与 mcp.sse-url 配置。");
+                                }
+                                break;
+                        case "hybrid":
+                        default:
+                                poiSearchToolOptional.ifPresent(builder::tools);
+                                mcpToolProviderOptional.ifPresent(builder::toolProvider);
+                                break;
+                }
 
         return builder.build();
     }

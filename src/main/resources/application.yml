@@ -42,10 +42,15 @@ langchain4j:
       temperature: 0.7      
 
 # ====== ⬇️【在这里配置你申请的高德API KEY】⬇️ ======
+# 请设置环境变量 AMAP_API_KEY，或在启动参数中传入
 amap:
-  api-key: ad8cc5d37d1beee96ab3ee0c75a6d816
+  api-key: ${AMAP_API_KEY}
 
 mcp:
-  enabled: false
-  sse-url: ""
+  enabled: true
+  sse-url: "https://mcp.amap.com/sse?key=${AMAP_API_KEY}"
   timeout-seconds: 20
+
+ai:
+  tool:
+    mode: mcp #mcp / local / hybrid

@@ -306,21 +306,31 @@ def main() -> int:
     parser.add_argument("--base-url", default="http://127.0.0.1:8080", help="Backend base URL")
     parser.add_argument("--user-id", default="demo-user", help="Business user ID")
     parser.add_argument("--repeats", type=int, default=3, help="Repeats per case for stability")
+    parser.add_argument("--case-limit", type=int, default=0, help="Run only first N cases, 0 means all")
+    parser.add_argument("--quick", action="store_true", help="Quick mode: skip long-session memory and session isolation")
     parser.add_argument("--json-out", default="reports/multitrip_eval_report.json", help="JSON report output path")
     parser.add_argument("--md-out", default="reports/multitrip_eval_report.md", help="Markdown report output path")
     args = parser.parse_args()
 
     start = time.time()
     cases = build_default_cases()
+    if args.case_limit and args.case_limit > 0:
+        cases = cases[:args.case_limit]
     case_results = [evaluate_case(args.base_url, args.user_id, c, args.repeats) for c in cases]
-    long_mem = evaluate_long_session_memory(args.base_url, args.user_id)
-    isolation = evaluate_session_isolation(args.base_url, args.user_id)
+    if args.quick:
+        long_mem = {"ok": True, "score": 0.0, "skipped": True}
+        isolation = {"ok": True, "score": 0.0, "skipped": True}
+    else:
+        long_mem = evaluate_long_session_memory(args.base_url, args.user_id)
+        isolation = evaluate_session_isolation(args.base_url, args.user_id)
 
     report = {
         "generated_at": dt.datetime.now().isoformat(timespec="seconds"),
         "base_url": args.base_url,
         "user_id": args.user_id,
         "repeats": args.repeats,
+        "case_limit": args.case_limit,
+        "quick": args.quick,
         "elapsed_seconds": round(time.time() - start, 3),
         "cases": case_results,
         "long_session_memory": long_mem,
