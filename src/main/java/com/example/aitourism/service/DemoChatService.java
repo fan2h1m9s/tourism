@@ -36,6 +36,23 @@ public class DemoChatService {
         return new ChatSendResponse(sessionId, answer);
     }
 
+    @Transactional
+    public String prepareStreamSession(ChatSendRequest request) {
+        String sessionId = normalizeSessionId(request.getSessionId());
+        String title = buildSessionTitle(request.getMessage());
+
+        chatPersistenceRepository.createSessionIfAbsent(sessionId, request.getUserId(), title);
+        chatPersistenceRepository.insertMessage(newMessageId(), sessionId, request.getUserId(), "user", request.getMessage());
+
+        return sessionId;
+    }
+
+    @Transactional
+    public void saveStreamAnswer(String sessionId, String userId, String answer) {
+        chatPersistenceRepository.insertMessage(newMessageId(), sessionId, userId, "assistant", answer);
+        chatPersistenceRepository.touchSession(sessionId);
+    }
+
     @Transactional(readOnly = true)
     public List<ChatHistoryItem> history(String sessionId, int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 200));

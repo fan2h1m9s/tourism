@@ -97,21 +97,29 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<script src="/lib/marked.min.js"></script>
+<script src="/lib/purify.min.js"></script>
 <script>
     const userId = "demo-user";
     let currentSessionId = "";
     let sessions = [];
 
-    marked.setOptions({
-        breaks: true,
-        gfm: true
-    });
+    if (typeof marked !== 'undefined') {
+        marked.setOptions({
+            breaks: true,
+            gfm: true
+        });
+    }
 
     function renderMarkdown(targetDiv, markdownText) {
+        if (typeof marked === 'undefined') {
+            targetDiv.innerText = markdownText || "";
+            return;
+        }
         const html = marked.parse(markdownText || "");
-        targetDiv.innerHTML = DOMPurify.sanitize(html);
+        targetDiv.innerHTML = typeof DOMPurify !== 'undefined'
+            ? DOMPurify.sanitize(html)
+            : html;
     }
 
     function formatTime(timeStr) {
@@ -260,7 +268,7 @@
                 const dataLines = chunk.split('\n');
                 for(let line of dataLines) {
                     if (line.startsWith('data:')) {
-                        const content = line.substring(5); // 去掉 "data:" 
+                        const content = line.substring(5).replace(/^ /, ''); // 去掉 "data:" 和紧随的空格
                         aiText += content;
                         renderMarkdown(aiMessageDiv, aiText);
                         scrollToBottom();
